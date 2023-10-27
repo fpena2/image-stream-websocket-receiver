@@ -1,7 +1,5 @@
-const canvas = document.getElementById('video-canvas');
-const ctx = canvas.getContext('2d');
+const imageElement = document.getElementById("live-image");
 const ws = new WebSocket('ws://localhost:8000', "demo-chat");
-
 ws.binaryType = 'arraybuffer';
 
 ws.onopen = function () {
@@ -9,15 +7,9 @@ ws.onopen = function () {
 };
 
 ws.onmessage = function (event) {
-  const imageData = new Uint8ClampedArray(event.data);
-  const blob = new Blob([imageData], { type: 'image/png' });
-
-  const imageElement = document.createElement('img');
-  imageElement.src = URL.createObjectURL(blob);
-
-  imageElement.onload = function () {
-    ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
-  };
+  const blob = new Blob([event.data], { type: 'image/png' });
+  const imageUrl = URL.createObjectURL(blob);
+  imageElement.src = imageUrl;
 };
 
 ws.onclose = function (event) {
