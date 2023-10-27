@@ -1,26 +1,33 @@
-import './style.css'
-import Peer from 'peerjs';
+const canvas = document.getElementById('video-canvas');
+const ctx = canvas.getContext('2d');
+const ws = new WebSocket('ws://localhost:8000', "demo-chat");
 
-const clientPeer = new Peer();
+ws.binaryType = 'arraybuffer';
 
-clientPeer.on('open', (id) => {
-  console.log('Client Peer ID is: ' + id);
+ws.onopen = function () {
+  console.log('WebSocket connection opened.');
+};
 
-  const serverConn = clientPeer.connect('server-peer-id');
-});
+ws.onmessage = function (event) {
+  const imageData = new Uint8ClampedArray(event.data);
+  const blob = new Blob([imageData], { type: 'image/png' });
 
-clientPeer.on('call', (call) => {
-  navigator.mediaDevices
-    .getUserMedia({ video: true, audio: true })
-    .then((localStream) => {
-      call.answer(localStream);
-      call.on('stream', (remoteStream) => {
-        const videoElement = document.createElement('video');
-        document.body.appendChild(videoElement);
-        videoElement.srcObject = remoteStream;
-      });
-    })
-    .catch((error) => {
-      console.error('Error accessing the webcam:', error);
-    });
-});
+  const imageElement = document.createElement('img');
+  imageElement.src = URL.createObjectURL(blob);
+
+  imageElement.onload = function () {
+    ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+  };
+};
+
+ws.onclose = function (event) {
+  if (event.wasClean) {
+    console.log(`WebSocket connection closed cleanly, code=${event.code}, reason=${event.reason}`);
+  } else {
+    console.error('WebSocket connection died');
+  }
+};
+
+ws.onerror = function (error) {
+  console.error(`WebSocket error: ${error.message}`);
+};
